@@ -1,5 +1,7 @@
+import 'package:audioplayers/audioplayers.dart';
 import 'package:awesome_dialog/awesome_dialog.dart';
 import 'package:flutter/material.dart';
+import 'package:tic_tac_game/ui/register_screen/register_screen.dart';
 
 class GameScreen extends StatefulWidget {
   final String player1;
@@ -12,11 +14,16 @@ class GameScreen extends StatefulWidget {
   State<GameScreen> createState() => _GameScreenState();
 }
 
+
 class _GameScreenState extends State<GameScreen> {
+  AudioCache audioCache = AudioCache();
+
   late List<List<String>> _board;
   late String _currentPlayer;
   late String _winner;
   late bool _gameOver;
+  int _step = 0;
+  Set<int> clickedItems = {};
 
   @override
   void initState() {
@@ -33,6 +40,8 @@ class _GameScreenState extends State<GameScreen> {
       _currentPlayer = 'X';
       _winner = "";
       _gameOver = false;
+      _step = 0;
+      clickedItems = {};
     });
   }
 
@@ -70,22 +79,23 @@ class _GameScreenState extends State<GameScreen> {
       }
       if (_winner != "") {
         AwesomeDialog(
+            dismissOnTouchOutside: false,
             context: context,
             dialogType: DialogType.success,
             animType: AnimType.rightSlide,
             btnOkText: "Play Again",
             title: _winner == "X"
-                ? widget.player1 + " Won!"
+                ? "${widget.player1} Win!"
                 : _winner == "O"
-                    ? widget.player2 + " Won!"
+                    ? "${widget.player2} Win!"
                     : "It is a tie!",
             btnOkOnPress: () {
               resetGame();
-            })
-          .show();
+            }).show();
       }
     });
   }
+
 
   @override
   Widget build(BuildContext context) {
@@ -95,6 +105,32 @@ class _GameScreenState extends State<GameScreen> {
         title: const Text('Game Screen'),
         backgroundColor: const Color(0xFF323D5B),
         elevation: 0,
+        actions: [
+          IconButton(
+              onPressed: () {
+                AwesomeDialog(
+                    context: context,
+                    dialogType: DialogType.question,
+                    animType: AnimType.rightSlide,
+                    btnOkText: "Change User's name!",
+                    btnCancelText: "Restart the Game!",
+                    btnOkColor: const Color(0xFF323D5B),
+                    btnCancelColor: const Color(0xFF323D5B),
+                    btnCancelOnPress: (){
+                      resetGame();
+                    },
+                    btnOkOnPress: () {
+                      Navigator.pushReplacement(
+                          context,
+                          MaterialPageRoute(
+                              builder: (context) => const RegisterScreen()));
+                    }).show();
+              },
+              icon: const Icon(
+                Icons.settings,
+                size: 30,
+              ))
+        ],
       ),
       body: SingleChildScrollView(
         child: Column(
@@ -104,7 +140,7 @@ class _GameScreenState extends State<GameScreen> {
               height: 70,
             ),
             SizedBox(
-              height: 120,
+              height: 100,
               child: Column(
                 children: [
                   Row(
@@ -119,8 +155,8 @@ class _GameScreenState extends State<GameScreen> {
                       ),
                       Text(
                         _currentPlayer == "X"
-                            ? widget.player1 + "($_currentPlayer)"
-                            : widget.player2 + "($_currentPlayer)",
+                            ? "${widget.player1}($_currentPlayer)"
+                            : "${widget.player2}($_currentPlayer)",
                         style: TextStyle(
                             fontSize: 30,
                             fontWeight: FontWeight.bold,
@@ -141,9 +177,6 @@ class _GameScreenState extends State<GameScreen> {
             ),
             Container(
               margin: const EdgeInsets.all(5),
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(10),
-              ),
               child: GridView.builder(
                   itemCount: 9,
                   shrinkWrap: true,
@@ -154,7 +187,14 @@ class _GameScreenState extends State<GameScreen> {
                     int row = index ~/ 3;
                     int col = index % 3;
                     return GestureDetector(
-                      onTap: () => makeMove(row, col),
+                      onTap: () {
+                        if (!clickedItems.contains(index)) {
+                          clickedItems.add(index);
+                          _step++;
+                          AudioPlayer().play(UrlSource(_step % 2 == 0 ? "https://www.soundjay.com/buttons/button-3.mp3" : "https://www.soundjay.com/buttons/button-09a.mp3"));
+                          makeMove(row, col);
+                        }
+                      },
                       child: Container(
                         margin: const EdgeInsets.all(4),
                         decoration: BoxDecoration(
@@ -165,7 +205,7 @@ class _GameScreenState extends State<GameScreen> {
                             _board[row][col],
                             style: TextStyle(
                                 fontWeight: FontWeight.bold,
-                                fontSize: 120,
+                                fontSize: 100,
                                 color: _board[row][col] == "X"
                                     ? const Color(0xFFE25041)
                                     : const Color(0xFF1CBD9E)),

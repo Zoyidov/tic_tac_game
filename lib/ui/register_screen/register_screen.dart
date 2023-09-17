@@ -56,7 +56,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   controller: player2Controller,
                   hintText: 'Second Player',
                   keyboardType: TextInputType.name,
-                  textInputAction: TextInputAction.next,
+                  textInputAction: TextInputAction.done,
                   prefixIcon: Icons.person,
                   caption: '',
                   validator: (value) {
